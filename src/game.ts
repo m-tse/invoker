@@ -107,7 +107,9 @@ export function reducer(s: GameState, a: GameAction): GameState {
       return initialState(a.requireCast, a.count)
   }
 
-  if (s.phase !== 'playing') return s
+  // Outside a run (before starting, or on the results screen) everything still works as free
+  // practice: orbs, invoking and casting update the board, but nothing is scored.
+  const practice = s.phase !== 'playing'
 
   switch (a.type) {
     case 'orb':
@@ -123,7 +125,7 @@ export function reducer(s: GameState, a: GameAction): GameState {
       const next = { ...s, slot1, slot2, invokes: s.invokes + 1 }
 
       // In cast mode only casting is judged, so any invoke just rearranges the slots.
-      if (s.requireCast) return next
+      if (practice || s.requireCast) return next
       if (spell.id === s.queue[0]) return advance(next, a.now)
       // Invoking the wrong spell is a miss, unless it was already sitting in a slot (a free swap).
       const wasSlotted = spell.id === s.slot1 || spell.id === s.slot2
@@ -133,8 +135,8 @@ export function reducer(s: GameState, a: GameAction): GameState {
     case 'cast': {
       const spellId = a.slot === 1 ? s.slot1 : s.slot2
       const ok = spellId != null && spellId === s.queue[0]
-      const castFx = { slot: a.slot, ok: ok || !s.requireCast, n: (s.castFx?.n ?? 0) + 1 }
-      if (!s.requireCast) return spellId ? { ...s, castFx } : s
+      const castFx = { slot: a.slot, ok: ok || practice || !s.requireCast, n: (s.castFx?.n ?? 0) + 1 }
+      if (practice || !s.requireCast) return spellId ? { ...s, castFx } : s
       if (ok) return advance({ ...s, castFx }, a.now)
       return miss({ ...s, castFx })
     }

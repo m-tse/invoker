@@ -54,7 +54,11 @@ export default function App() {
   // Cast sounds: in cast mode, every cast of a slotted spell (right or wrong, like in Dota);
   // in plain Invoke mode there is no casting, so a correct invoke plays the spell instead.
   useEffect(() => {
-    if (game.invokes > 0) playSound('invoke')
+    if (game.invokes === 0) return
+    playSound('invoke')
+    // Practice in plain Invoke mode has no casting, so the invoked spell (now in slot 1) plays too.
+    if (!game.requireCast && game.phase !== 'playing' && game.slot1) playSound(game.slot1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.invokes])
   useEffect(() => {
     if (!game.requireCast || !game.castFx) return
