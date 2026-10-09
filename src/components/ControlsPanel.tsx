@@ -66,6 +66,20 @@ export function ControlsPanel({ binds, settings, onBind, onReset, onSettings }: 
           checked={settings.showHints}
           onChange={(v) => onSettings({ showHints: v })}
         />
+        <Toggle label="Sound effects" checked={settings.sound} onChange={(v) => onSettings({ sound: v })} />
+        <label className={`volume ${settings.sound ? '' : 'disabled'}`}>
+          <span>Volume</span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={settings.volume}
+            disabled={!settings.sound}
+            onChange={(e) => onSettings({ volume: Number(e.target.value) })}
+            onPointerUp={(e) => e.currentTarget.blur()}
+          />
+        </label>
       </section>
 
       <section className="bind-group help">

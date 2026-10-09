@@ -25,6 +25,8 @@ export interface GameState {
   finishedMs: number | null
   splits: Split[]
   misses: number
+  // Count of successful invokes, so the UI can play the invoke sound.
+  invokes: number
   // Latest correct/miss result; n bumps every time so the UI can replay the board flash.
   flash: { ok: boolean; n: number } | null
   // Bumped on every cast so the UI can replay the slot animation.
@@ -73,6 +75,7 @@ export const initialState = (requireCast: boolean, count: number): GameState => 
   finishedMs: null,
   splits: [],
   misses: 0,
+  invokes: 0,
   castFx: null,
   flash: null,
 })
@@ -117,7 +120,7 @@ export function reducer(s: GameState, a: GameAction): GameState {
       let { slot1, slot2 } = s
       if (spell.id === slot2) [slot1, slot2] = [slot2, slot1]
       else if (spell.id !== slot1) [slot1, slot2] = [spell.id, slot1]
-      const next = { ...s, slot1, slot2 }
+      const next = { ...s, slot1, slot2, invokes: s.invokes + 1 }
 
       // In cast mode only casting is judged, so any invoke just rearranges the slots.
       if (s.requireCast) return next

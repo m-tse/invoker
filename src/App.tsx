@@ -7,12 +7,15 @@ import { GameBoard } from './components/GameBoard'
 import { SpellList } from './components/SpellList'
 import { BindOverlay } from './components/BindOverlay'
 import { SpellCount } from './components/SpellCount'
+import { playSound, setVolume, unlockAudio } from './sound'
 
 export interface Settings {
   requireCast: boolean
   showUpcoming: boolean
   showHints: boolean
   spellCount: number
+  sound: boolean
+  volume: number
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -20,6 +23,8 @@ const DEFAULT_SETTINGS: Settings = {
   showUpcoming: true,
   showHints: true,
   spellCount: 10,
+  sound: true,
+  volume: 0.6,
 }
 
 // 10-spell runs keep the original key so earlier bests still show up.
@@ -44,6 +49,24 @@ export default function App() {
   useEffect(() => save('settings', settings), [settings])
   useEffect(() => save('binds', binds), [binds])
   useEffect(() => save('bests', bests), [bests])
+  useEffect(() => setVolume(settings.sound ? settings.volume : 0), [settings.sound, settings.volume])
+
+  // Cast sounds: in cast mode, every cast of a slotted spell (right or wrong, like in Dota);
+  // in plain Invoke mode there is no casting, so a correct invoke plays the spell instead.
+  useEffect(() => {
+    if (game.invokes > 0) playSound('invoke')
+  }, [game.invokes])
+  useEffect(() => {
+    if (!game.requireCast || !game.castFx) return
+    const id = game.castFx.slot === 1 ? game.slot1 : game.slot2
+    if (id) playSound(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.castFx?.n])
+  useEffect(() => {
+    const last = game.splits[game.splits.length - 1]
+    if (!game.requireCast && last) playSound(last.spellId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.splits.length])
 
   // Switching cast rules or run length resets the board.
   useEffect(() => {
@@ -110,6 +133,7 @@ export default function App() {
       })
 
     const onKeyDown = (e: KeyboardEvent) => {
+      unlockAudio()
       const c = ctx.current
       if (!c.binding && e.target instanceof HTMLInputElement && e.target.type === 'text') return // typing in a field
       if (c.binding) {
@@ -143,6 +167,7 @@ export default function App() {
     }
 
     const onMouseDown = (e: MouseEvent) => {
+      unlockAudio()
       const code = mouseCode(e.button)
       const c = ctx.current
       if (!code) return
